@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross Country Skiing for Middle-Aged Smokers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #FFFFFF 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+        
+        .stat-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .lung-capacity {
+            background: linear-gradient(90deg, #ff4444, #ffaa44);
+        }
+        
+        .stamina {
+            background: linear-gradient(90deg, #44ff44, #44ffaa);
+        }
+        
+        .nicotine {
+            background: linear-gradient(90deg, #aa44ff, #ff44aa);
+        }
+        
+        #commentary {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-style: italic;
+            max-width: 600px;
+            text-align: center;
+            display: none;
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 1000;
+        }
+        
+        #start-screen h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        #start-screen p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            text-align: center;
+            padding: 0 20px;
+            line-height: 1.6;
+        }
+        
+        button {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background: #ddd;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 1000;
+        }
+        
+        #game-over h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        #game-over p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        
+        <div id="ui">
+            <div><strong>Distance:</strong> <span id="distance">0</span>m</div>
+            <div><strong>Speed:</strong> <span id="speed">0</span> km/h</div>
+            <div style="margin-top: 10px;">
+                <div><strong>Lung Capacity:</strong></div>
+                <div class="stat-bar">
+                    <div class="stat-fill lung-capacity" id="lung-bar" style="width: 100%"></div>
+                </div>
+                
+                <div><strong>Stamina:</strong></div>
+                <div class="stat-bar">
+                    <div class="stat-fill stamina" id="stamina-bar" style="width: 100%"></div>
+                </div>
+                
+                <div><strong>Nicotine Craving:</strong></div>
+                <div class="stat-bar">
+                    <div class="stat-fill nicotine" id="nicotine-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+                SPACE - Smoke Break<br>
+                ← → - Steer<br>
+                Hold ↑ - Ski Harder (not recommended)
+            </div>
+        </div>
+        
+        <div id="commentary"></div>
+        
+        <div id="start-screen">
+            <h1>Cross Country Skiing<br>for Middle-Aged Smokers</h1>
+            <p>
+                Your doctor said you need more exercise.<br>
+                Your spouse suggested "something outdoors."<br>
+                You thought, "How hard could it be?"
+            </p>
+            <p style="font-size: 14px; opacity: 0.7;">
+                Manage your rapidly depleting lung capacity, give in to nicotine cravings,<br>
+                and try to make it more than 100 meters without collapsing.
+            </p>
+            <button onclick="startGame()">Begin the Regret</button>
+            <div class="controls">
+                <p>Arrow keys to ski | SPACE for smoke breaks</p>
+            </div>
+        </div>
+        
+        <div id="game-over">
+            <h2>Predictable Outcome</h2>
+            <p id="game-over-text"></p>
+            <button onclick="location.reload()">Try Again (Why?)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const game = {
+            running: false,
+            distance: 0,
+            speed: 0,
+            lungCapacity: 100,
+            stamina: 100,
+            nicotineCraving: 0,
+            smoking: false,
+            smokeTimer: 0,
+            cigarettesSmoked: 0,
+            playerX: canvas.width / 4,
+            playerY: canvas.height / 2,
+            trees: [],
+            groundOffset: 0,
+            commentary: [
+                "Your knees are already complaining.",
+                "Why is everyone else making this look so easy?",
+                "You used to be athletic... in high school.",
+                "That teenage couple just lapped you.",
+                "Your lungs have filed a formal complaint.",
+                "Remember when stairs weren't a challenge?",
+                "At least the view is... *wheeze*... nice.",
+                "Your Apple Watch is judging you.",
+                "The cold air tastes like regret and menthol.",
+                "You're considering calling an Uber.",
+                "That hill looked much smaller from the parking lot.",
+                "Your doctor's words echo: 'Just 30 minutes of cardio!'",
+                "The ski rental guy definitely sized you up correctly.",
+                "Everything hurts and you're dying.",
+                "Why is it uphill in BOTH directions?",
+                "Maybe you should take up chess instead."
+            ],
+            lastCommentary: 0
+        };
+        
+        class Tree {
+            constructor() {
+                this.x = canvas.width + Math.random() * 200;
+                this.y = canvas.height * 0.6 + Math.random() * canvas.height * 0.2;
+                this.size = 30 + Math.random() * 40;
+            }
+            
+            update() {
+                this.x -= game.speed / 5;
+            }
+            
+            draw() {
+                // Simple tree
+                ctx.fillStyle = '#2d5016';
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.size/3, this.y - this.size);
+                ctx.lineTo(this.x + this.size/3, this.y - this.size);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.fillStyle = '#4a3520';
+                ctx.fillRect(this.x - this.size/10, this.y, this.size/5, this.size/4);
+            }
+        }
+        
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            game.running = true;
+            game.speed = 5;
+            
+            // Initialize trees
+            for (let i = 0; i < 10; i++) {
+                game.trees.push(new Tree());
+            }
+            
+            gameLoop();
+        }
+        
+        function showCommentary(text) {
+            const commentary = document.getElementById('commentary');
+            commentary.textContent = text;
+            commentary.style.display = 'block';
+            setTimeout(() => {
+                commentary.style.display = 'none';
+            }, 3000);
+        }
+        
+        function gameLoop() {
+            if (!game.running) return;
+            
+            // Clear canvas
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ground/snow
+            game.groundOffset += game.speed / 2;
+            ctx.fillStyle = '#F0F8FF';
+            ctx.fillRect(0, canvas.height * 0.6, canvas.width, canvas.height * 0.4);
+            
+            // Draw ski tracks
+            for (let i = 0; i < canvas.width; i += 50) {
+                const x = i - (game.groundOffset % 50);
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x, canvas.height * 0.65);
+                ctx.lineTo(x + 30, canvas.height * 0.9);
+                ctx.stroke();
+            }
+            
+            // Update and draw trees
+            game.trees.forEach((tree, index) => {
+                tree.update();
+                tree.draw();
+                
+                if (tree.x < -100) {
+                    game.trees.splice(index, 1);
+                    game.trees.push(new Tree());
+                }
+            });
+            
+            // Draw player (stick figure on skis)
+            const px = game.playerX;
+            const py = game.playerY;
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(px, py - 50, 15, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(px, py - 35);
+            ctx.lineTo(px, py - 10);
+            ctx.stroke();
+            
+            // Arms (looking exhausted)
+            ctx.beginPath();
+            ctx.moveTo(px - 20, py - 25);
+            ctx.lineTo(px, py - 20);
+            ctx.lineTo(px + 20, py - 25);
+            ctx.stroke();
+            
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(px, py - 10);
+            ctx.lineTo(px - 15, py + 10);
+            ctx.moveTo(px, py - 10);
+            ctx.lineTo(px + 15, py + 10);
+            ctx.stroke();
+            
+            // Skis
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(px - 25, py + 12);
+            ctx.lineTo(px - 5, py + 12);
+            ctx.moveTo(px + 5, py + 12);
+            ctx.lineTo(px + 25, py + 12);
+            ctx.stroke();
+            
+            // If smoking, draw cigarette
+            if (game.smoking) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(px + 15, py - 45);
+                ctx.lineTo(px + 25, py - 48);
+                ctx.stroke();
+                
+                // Smoke
+                ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.arc(px + 28 + i * 5, py - 52 - i * 5, 3 + i, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.arc(px + 25, py - 48, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Game logic
+            if (!game.smoking) {
+                game.distance += game.speed / 10;
+                game.lungCapacity -= 0.1 * (1 + game.speed / 50);
+                game.stamina -= 0.05 * (1 + game.speed / 50);
+                game.nicotineCraving += 0.15;
+                
+                // Nicotine craving affects performance
+                if (game.nicotineCraving > 70) {
+                    game.speed *= 0.995;
+                    game.lungCapacity -= 0.1;
+                }
+            } else {
+                game.smokeTimer++;
+                game.lungCapacity -= 0.3;
+                game.stamina += 0.5;
+                game.nicotineCraving = Math.max(0, game.nicotineCraving - 3);
+                
+                if (game.smokeTimer > 120) {
+                    game.smoking = false;
+                    game.smokeTimer = 0;
+                    game.speed = 5;
+                    showCommentary("Back to the grind. Was it worth it?");
+                }
+            }
+            
+            // Random commentary
+            if (Date.now() - game.lastCommentary > 8000 && Math.random() < 0.01) {
+                const comment = game.commentary[Math.floor(Math.random() * game.commentary.length)];
+                showCommentary(comment);
+                game.lastCommentary = Date.now();
+            }
+            
+            // Clamp values
+            game.lungCapacity = Math.max(0, game.lungCapacity);
+            game.stamina = Math.max(0, game.stamina);
+            game.nicotineCraving = Math.min(100, game.nicotineCraving);
+            game.speed = Math.max(0.5, game.speed);
+            
+            // Update UI
+            document.getElementById('distance').textContent = Math.floor(game.distance);
+            document.getElementById('speed').textContent = (game.speed * 3).toFixed(1);
+            document.getElementById('lung-bar').style.width = game.lungCapacity + '%';
+            document.getElementById('stamina-bar').style.width = game.stamina + '%';
+            document.getElementById('nicotine-bar').style.width = game.nicotineCraving + '%';
+            
+            // Check for game over
+            if (game.lungCapacity <= 0 || game.stamina <= 0) {
+                endGame();
+                return;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function endGame() {
+            game.running = false;
+            const gameOver = document.getElementById('game-over');
+            const text = document.getElementById('game-over-text');
+            
+            let message = `You made it ${Math.floor(game.distance)} meters.<br>`;
+            
+            if (game.distance < 50) {
+                message += "The parking lot is still visible.<br>Your car is mocking you.";
+            } else if (game.distance < 100) {
+                message += "You've gone further in a grocery store.<br>Your doctor would not be impressed.";
+            } else if (game.distance < 200) {
+                message += "That's almost one city block.<br>You smoked " + game.cigarettesSmoked + " cigarettes.";
+            } else if (game.distance < 500) {
+                message += "Genuinely surprising.<br>Still, you smoked " + game.cigarettesSmoked + " cigarettes.";
+            } else {
+                message += "How?<br>You're either lying about your age or your smoking habit.";
+            }
+            
+            text.innerHTML = message;
+            gameOver.style.display = 'flex';
+        }
+        
+        // Controls
+        document.addEventListener('keydown', (e) => {
+            if (!game.running) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!game.smoking) {
+                    game.smoking = true;
+                    game.speed = 0;
+                    game.cigarettesSmoked++;
+                    showCommentary("Ah, sweet relief. Your lungs disagree.");
+                }
+            }
+            
+            if (e.code === 'ArrowUp') {
+                if (!game.smoking && game.stamina > 20) {
+                    game.speed += 0.3;
+                    game.stamina -= 0.5;
+                    game.lungCapacity -= 0.3;
+                }
+            }
+            
+            if (e.code === 'ArrowLeft') {
+                game.playerX = Math.max(100, game.playerX - 5);
+            }
+            
+            if (e.code === 'ArrowRight') {
+                game.playerX = Math.min(canvas.width - 100, game.playerX + 5);
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
